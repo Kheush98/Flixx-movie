@@ -4,10 +4,12 @@ const global = {
    currentPage: window.location.pathname
 };
 
+// Display 20 most popular movies
 async function displayPopularMovies() {
+    showSpinner();
     const { results } = await fethAPIData('movie/popular');
-    const popularMovies = document.querySelector('#popular-movies');
-
+    hideSpinner();
+    
     results.forEach(movie => {
         const card = document.createElement('div');
         card.classList.add('card');
@@ -23,9 +25,35 @@ async function displayPopularMovies() {
             </p>
           </div>`;
         
-        popularMovies.appendChild(card);
+        document.querySelector('#popular-movies').appendChild(card);
     });
-    console.log(popularMovies)
+    
+}
+
+// Display 20 most popular tv shows
+async function displayPopularShows() {
+    showSpinner();
+    const { results } = await fethAPIData('tv/popular');
+    hideSpinner();
+    
+    results.forEach(tv => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        const imgPath = tv.poster_path ? `https://image.tmdb.org/t/p/w500${tv.poster_path}` : 'images/no-image.jpg';
+
+        card.innerHTML = `<a href="tv-details.html?id=${tv.id}">
+            <img class="card-img-top" src="${imgPath}" alt="${tv.name}">
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">${tv.name}</h5>
+            <p class="card-text">
+              <small class="text-muted">Aire Date: ${tv.first_air_date}</small>
+            </p>
+          </div>`;
+        
+        document.querySelector('#popular-shows').appendChild(card);
+    });
+    
 }
 
 // Fetch data from TMDB API
@@ -34,9 +62,16 @@ async function fethAPIData(endpoint) {
     const URL_API = 'https://api.themoviedb.org/3/';
 
     const response = await fetch(`${URL_API}${endpoint}?api_key=${API_KEY}`);
-    const data = response.json();
 
-    return data;
+   return response.json();
+}
+
+function showSpinner() {
+    document.querySelector('.spinner').classList.add('show');
+}
+
+function hideSpinner() {
+    document.querySelector('.spinner').classList.remove('show');
 }
 
 // Highlight active link
@@ -58,7 +93,7 @@ function init() {
             displayPopularMovies();
             break;
         case '/shows.html':
-            console.log('Shows');
+            displayPopularShows();
             break;
         case '/movie-details.html':
             console.log('Movie Details');

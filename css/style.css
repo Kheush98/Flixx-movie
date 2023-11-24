@@ -28,6 +28,10 @@ ul {
   list-style: none;
 }
 
+p {
+  margin-bottom: 20px;
+}
+
 .text-primary {
   color: var(--color-secondary);
 }
@@ -48,6 +52,7 @@ ul {
 .btn {
   display: inline-block;
   padding: 0.5rem 1rem;
+  margin: 20px 0;
   border: 1px solid var(--color-secondary);
   border-radius: 5px;
   color: #fff;
@@ -247,8 +252,9 @@ section h2 {
   margin-top: 20px;
 }
 
-.details-bottom {
-}
+/* .details-bottom {
+
+} */
 
 .details-bottom li {
   margin: 15px 0;

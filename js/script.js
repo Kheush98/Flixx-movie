@@ -1,14 +1,23 @@
 'use strict';
 
 const global = {
-   currentPage: window.location.pathname
+   currentPage: window.location.pathname,
+   search: {
+    term: '',
+    type: '',
+    page: 1,
+    totalPage: 1,
+    totalResult: 0
+   },
+   api: {
+    apiKey:'3005a469a8e2786d0b53eca6181e277a',
+    apiUrl: 'https://api.themoviedb.org/3/'
+   }
 };
 
 // Display 20 most popular movies
 async function displayPopularMovies() {
-    showSpinner();
     const { results } = await fethAPIData('movie/popular');
-    hideSpinner();
     
     results.forEach(movie => {
         const card = document.createElement('div');
@@ -21,7 +30,7 @@ async function displayPopularMovies() {
           <div class="card-body">
             <h5 class="card-title">${movie.title}</h5>
             <p class="card-text">
-              <small class="text-muted">Release: ${movie.release_date}</small>
+              <small class="text-muted">Sortie: ${movie.release_date}</small>
             </p>
           </div>`;
         
@@ -32,9 +41,7 @@ async function displayPopularMovies() {
 
 // Display 20 most popular tv shows
 async function displayPopularShows() {
-    showSpinner();
     const { results } = await fethAPIData('tv/popular');
-    hideSpinner();
     
     results.forEach(tv => {
         const card = document.createElement('div');
@@ -60,9 +67,7 @@ async function displayPopularShows() {
 async function displayMoviesDetails() {
     const movieID = window.location.search.split('=')[1];
 
-    showSpinner();
     const movie = await fethAPIData(`movie/${movieID}`);
-    hideSpinner();
 
     // Display for background image
     displayBackgroundImage('movie', movie.backdrop_path);
@@ -80,7 +85,7 @@ async function displayMoviesDetails() {
         <i class="fas fa-star text-primary"></i>
         ${movie.vote_average.toFixed(1)} / 10
         </p>
-        <p class="text-muted">Release Date: ${movie.release_date}</p>
+        <p class="text-muted">Date De Sortie: ${movie.release_date}</p>
         <p>
             ${movie.overview}
         </p>
@@ -93,7 +98,7 @@ async function displayMoviesDetails() {
     </div>
   </div>
   <div class="details-bottom">
-    <h2>Movie Info</h2>
+    <h2>Film Info</h2>
     <ul>
       <li><span class="text-secondary">Budget:</span> $${movie.budget}</li>
       <li><span class="text-secondary">Revenue:</span> $${movie.revenue}</li>
@@ -114,9 +119,7 @@ async function displayMoviesDetails() {
 async function displayShowDetails() {
     const showID = window.location.search.split('=')[1];
 
-    showSpinner();
     const show = await fethAPIData(`tv/${showID}`);
-    hideSpinner();
 
     // Display for background image
     displayBackgroundImage('tv', show.backdrop_path);
@@ -134,7 +137,7 @@ async function displayShowDetails() {
         <i class="fas fa-star text-primary"></i>
         ${show.vote_average.toFixed(1)} / 10
         </p>
-        <p class="text-muted">Release Date: ${show.first_air_date}</p>
+        <p class="text-muted">Date De Sortie: ${show.first_air_date}</p>
         <p>
             ${show.overview}
         </p>
@@ -210,6 +213,70 @@ async function displaySlider() {
 
 }
 
+async function search() {
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+
+    global.search.type = urlParams.get('type');
+    global.search.term = urlParams.get('search-term');
+
+    if (global.search.term !== '' && global.search.term !== null) {
+        const { results, total_page, page, total_results } = await searchAPIData();
+
+        global.search.totalPage = total_page;
+        global.search.page = page;
+        global.search.totalResult = total_results;
+
+        if (results.length === 0) {
+            showAlert('No results found');
+        }
+
+        displaySearchResults(results);
+
+        document.querySelector('#search-term').value = '';
+
+    } else {
+        showAlert('Veuillez entrer votre recherche s\'il vous plait');
+    }
+}
+
+function displaySearchResults(results) {
+    results.forEach(result => {
+        const div = document.createElement('div');
+        div.classList.add('card');
+
+        const imgPath = result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : 'images/no-image.jpg';
+
+        div.innerHTML = `
+          <a href="${global.search.type}-details.html?id=${result.id}">
+            <img class="card-img-top" src="${imgPath}" alt="${global.search.type === 'movie' ? result.title : result.name}">
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">${
+                global.search.type === 'movie' ?
+                    result.title : result.name
+            }</h5>
+            <p class="card-text">
+              <small class="text-muted">Sortie: ${global.search.type === 'movie' ? result.release_date : result.first_air_date}</small>
+            </p>
+          </div>`;
+
+          document.querySelector('#search-results').appendChild(div);
+    })
+
+    document.querySelector('#search-results-heading').innerHTML = `
+        <h2>${results.length} sur ${global.search.totalResult} pour '${global.search.term}'</h2>
+    `;
+
+    displayPagination();
+}
+
+// Create and Display Pagination For Search
+function displayPagination() {
+    const div = document.createElement('div');
+    
+}
+
 function initSwiper() {
     const swiper = new Swiper('.swiper', {
         slidesPerView: 1,
@@ -236,10 +303,25 @@ function initSwiper() {
 
 // Fetch data from TMDB API
 async function fethAPIData(endpoint) {
-    const API_KEY = '3005a469a8e2786d0b53eca6181e277a';
-    const URL_API = 'https://api.themoviedb.org/3/';
+    const API_KEY = global.api.apiKey;
+    const URL_API = global.api.apiUrl;
 
-    const response = await fetch(`${URL_API}${endpoint}?api_key=${API_KEY}`);
+    showSpinner();
+    const response = await fetch(`${URL_API}${endpoint}?api_key=${API_KEY}&language=fr-FR`);
+    hideSpinner();
+    
+   return response.json();
+}
+
+// Fetch data from TMDB API
+async function searchAPIData() {
+    const API_KEY = global.api.apiKey;
+    const URL_API = global.api.apiUrl; 
+
+    showSpinner();
+    const response = await fetch(`${URL_API}search/${global.search.type}?api_key=${API_KEY}&language=fr-FR
+    &query=${global.search.term}`);
+    hideSpinner();
 
    return response.json();
 }
@@ -263,6 +345,12 @@ function highlightActiveLink() {
     })
 }
 
+function showAlert(message, className = 'error') {
+    const div = document.createElement('div');
+    div.classList.add('alert', className);
+    div.appendChild(document.createTextNode(message));
+    document.querySelector('#alert').appendChild(div);
+}
 
 // Intit app 
 function init() {
@@ -281,7 +369,7 @@ function init() {
         case '/tv-details.html':
             displayShowDetails();
         case '/search.html':
-            console.log('Search');
+            search();
             break;
     }
 

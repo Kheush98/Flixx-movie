@@ -291,12 +291,11 @@ function displayPagination() {
 
     if (global.search.page === 1) {
         document.querySelector('#prev').disabled = true;
-    } else if (global.search.page === global.search.totalPage) {
+    } 
+    
+    if (global.search.page === global.search.totalPage) {
         document.querySelector('#next').disabled = true;
-    } else {
-        document.querySelector('#prev').disabled = false;
-        document.querySelector('#next').disabled = false;
-    }
+    } 
 
     document.querySelector('#next').addEventListener('click', async () => {
         global.search.page++;
